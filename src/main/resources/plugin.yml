@@ -1,0 +1,11 @@
+name: WaypointPlugin
+version: 1.0.0
+main: hu.thingz.waypoints.WaypointPlugin
+api-version: 1.21.9
+author: levikethingz
+description: A plugin to save and render waypoints in Minecraft
+
+commands:
+  waypoint:
+    description: You can manage your waypoints
+    usage: "Usage: /waypoint [add|list|remove]"
