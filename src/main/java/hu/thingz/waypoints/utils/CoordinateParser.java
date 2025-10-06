@@ -22,7 +22,7 @@ public class CoordinateParser {
         } else if (input.startsWith("~")) {
             try {
                 String offsetStr = input.substring(1);
-                double offset = Double.parseDouble(input);
+                double offset = Double.parseDouble(offsetStr);
                 return defaultValue + offset;
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("Invalid relative coordinate: " + input);
