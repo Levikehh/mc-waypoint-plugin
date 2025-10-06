@@ -1,5 +1,7 @@
 package hu.thingz.waypoints.commands;
 
+import hu.thingz.waypoints.utils.CoordinateParser;
+import hu.thingz.waypoints.utils.MessageFormatter;
 import hu.thingz.waypoints.utils.Result;
 import hu.thingz.waypoints.WaypointPlugin;
 import hu.thingz.waypoints.database.WaypointRepository;
@@ -29,7 +31,7 @@ public class WaypointCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("Only players can run this command!");
+            sender.sendMessage(MessageFormatter.error("Only players can run this command!"));
             return true;
         }
 
@@ -60,30 +62,35 @@ public class WaypointCommand implements CommandExecutor {
 
     private void addWaypoint(Player player, String[] args) {
         try {
-            if (args.length == 0) {
-                player.sendMessage(ChatColor.RED + "Usage: /waypoint add <name> [x y z]");
+            if (args.length == 0 || (args.length > 1 && args.length < 4)) {
+                player.sendMessage(MessageFormatter.error("Usage: /waypoint add <name> [x y z]"));
                 return;
             }
 
             String name = args[0];
             Location location = player.getLocation();
 
+            // If coordinates were provided, parse them
+            if (args.length == 4) {
+                location = CoordinateParser.parseCoordinates(player, args[1], args[2], args[3]);
+            }
+
             Result<Void> result = this.repository.add(player.getUniqueId(), name, location);
 
             if (result.isSuccess()) {        
-                player.sendMessage(ChatColor.GOLD + "Waypoint " + ChatColor.AQUA + name + ChatColor.GOLD + " has been saved successfully!");
+                player.sendMessage(MessageFormatter.success("Waypoint ") + MessageFormatter.variable(name) + MessageFormatter.success(" has been saved successfully!"));
             } else {
-                player.sendMessage(ChatColor.RED + "Waypoint already exists with this name: " + ChatColor.AQUA + name);
+                player.sendMessage(MessageFormatter.error("Waypoint already exists with this name: ") + MessageFormatter.variable(name));
             }
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
+            player.sendMessage(MessageFormatter.error(e.getMessage()));
         }
     }
 
     private void removeWaypoint(Player player, String[] args) {
         try {
             if (args.length == 0) {
-                player.sendMessage(ChatColor.RED + "Usage: /waypoint add <name> [x y z]");
+                player.sendMessage(MessageFormatter.error("Usage: /waypoint remove <name>"));
                 return;
             }
 
@@ -97,7 +104,7 @@ public class WaypointCommand implements CommandExecutor {
             }
 
             if (!hasWaypoints.getValue()) {
-                player.sendMessage(ChatColor.RED + "You don't have any waypoints saved yet.");
+                player.sendMessage(MessageFormatter.error("You don't have any waypoints saved yet."));
                 return;
             }
 
@@ -108,11 +115,11 @@ public class WaypointCommand implements CommandExecutor {
             }
 
             if (!result.getValue()) {
-                player.sendMessage(ChatColor.RED + "Could not find waypoint with this name.");
+                player.sendMessage(MessageFormatter.error("Could not find waypoint with this name."));
                 return;
             }
 
-            player.sendMessage(ChatColor.GOLD + "Waypoint " + ChatColor.AQUA+ name + ChatColor.GOLD + " has been removed successfully!");
+            player.sendMessage(MessageFormatter.success("Waypoint ") + MessageFormatter.variable(name) + MessageFormatter.success(" has been removed successfully!"));
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
@@ -129,7 +136,7 @@ public class WaypointCommand implements CommandExecutor {
             }
 
             if (!hasWaypoints.getValue()) {
-                player.sendMessage("You don't have any waypoints saved yet.");
+                player.sendMessage(MessageFormatter.error("You don't have any waypoints saved yet."));
                 return;
             }
 
@@ -141,16 +148,16 @@ public class WaypointCommand implements CommandExecutor {
 
             List<Waypoint> waypoints = result.getValue();
             
-            StringBuilder message = new StringBuilder(ChatColor.GOLD + "Your saved waypoints are:\n");
+            StringBuilder message = new StringBuilder(MessageFormatter.success("=== Your waypoints (" + waypoints.size() + ") ===\n"));
             for (Waypoint waypoint : waypoints) {
                 Location wLocation = waypoint.getLocation();
-
-                StringBuilder locationString = new StringBuilder();
-                locationString.append(ChatColor.GOLD + "x:" + ChatColor.AQUA + wLocation.getX() + " ");
-                locationString.append(ChatColor.GOLD + "y:" + ChatColor.AQUA + wLocation.getY() + " ");
-                locationString.append(ChatColor.GOLD + "z:" + ChatColor.AQUA + wLocation.getZ() + " ");
-
-                message.append(ChatColor.GOLD + "\t- " + ChatColor.AQUA + waypoint.getName() + ChatColor.GOLD + " @ " + locationString + "\n");
+                
+                message.append(
+                        MessageFormatter.success(" - ") +
+                        MessageFormatter.clickable(waypoint.getName()) + 
+                        MessageFormatter.success(" @ ") +
+                        MessageFormatter.formatLocation(wLocation) +
+                        MessageFormatter.success("\n"));
             }
 
             player.sendMessage(message.toString());
