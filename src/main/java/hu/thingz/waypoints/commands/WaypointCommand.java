@@ -1,6 +1,7 @@
 package hu.thingz.waypoints.commands;
 
 import hu.thingz.waypoints.utils.CoordinateParser;
+import hu.thingz.waypoints.utils.MessageBuilder;
 import hu.thingz.waypoints.utils.MessageFormatter;
 import hu.thingz.waypoints.utils.Result;
 import hu.thingz.waypoints.WaypointPlugin;
@@ -13,6 +14,8 @@ import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
 import org.bukkit.Location;
 import org.bukkit.ChatColor;
+
+import net.md_5.bungee.api.chat.ClickEvent;
 
 import java.util.Arrays;
 import java.util.List;
@@ -78,12 +81,12 @@ public class WaypointCommand implements CommandExecutor {
             Result<Void> result = this.repository.add(player.getUniqueId(), name, location);
 
             if (result.isSuccess()) {        
-                player.sendMessage(MessageFormatter.success("Waypoint ") + MessageFormatter.variable(name) + MessageFormatter.success(" has been saved successfully!"));
+                player.spigot().sendMessage(new MessageBuilder().addSuccess("Waypoint ").addVariable(name).addSuccess(" has been saved successfully!").build());
             } else {
-                player.sendMessage(MessageFormatter.error("Waypoint already exists with this name: ") + MessageFormatter.variable(name));
+                player.spigot().sendMessage(new MessageBuilder().addError("Waypoint already exists with this name: ").addVariable(name).build());
             }
         } catch (IllegalArgumentException e) {
-            player.sendMessage(MessageFormatter.error(e.getMessage()));
+            player.spigot().sendMessage(new MessageBuilder().addError(e.getMessage()).build());
         }
     }
 
@@ -99,27 +102,27 @@ public class WaypointCommand implements CommandExecutor {
 
             Result<Boolean> hasWaypoints = this.repository.hasAny(playerId);
             if (!hasWaypoints.isSuccess()) {
-                player.sendMessage(ChatColor.GRAY + "An unexpected error occured, please try again later.");
+                player.spigot().sendMessage(MessageBuilder.internalError());
                 return;
             }
 
             if (!hasWaypoints.getValue()) {
-                player.sendMessage(MessageFormatter.error("You don't have any waypoints saved yet."));
+                player.spigot().sendMessage(new MessageBuilder().addError("You don't have any waypoints saved yet.").build());
                 return;
             }
 
             Result<Boolean> result = this.repository.delete(playerId, name);
             if (!result.isSuccess()) {
-                player.sendMessage(ChatColor.GRAY + "An unexpected error occured, please try again later.");
+                player.spigot().sendMessage(MessageBuilder.internalError());
                 return;
             }
 
             if (!result.getValue()) {
-                player.sendMessage(MessageFormatter.error("Could not find waypoint with this name."));
+                player.spigot().sendMessage(new MessageBuilder().addError("Could not find waypoint with this name.").build());
                 return;
             }
 
-            player.sendMessage(MessageFormatter.success("Waypoint ") + MessageFormatter.variable(name) + MessageFormatter.success(" has been removed successfully!"));
+            player.spigot().sendMessage(new MessageBuilder().addSuccess("Waypoint ").addVariable(name).addSuccess(" has been removed successfully!").build());
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
@@ -131,36 +134,48 @@ public class WaypointCommand implements CommandExecutor {
 
             Result<Boolean> hasWaypoints = this.repository.hasAny(playerId);
             if (!hasWaypoints.isSuccess()) {
-                player.sendMessage(ChatColor.GRAY + "An unexpected error occured, please try again later.");
+                player.spigot().sendMessage(MessageBuilder.internalError());
                 return;
             }
 
             if (!hasWaypoints.getValue()) {
-                player.sendMessage(MessageFormatter.error("You don't have any waypoints saved yet."));
+                player.spigot().sendMessage(new MessageBuilder().addError("You don't have any waypoints saved yet.").build());
                 return;
             }
 
             Result<List<Waypoint>> result = this.repository.list(playerId);
             if (!result.isSuccess()) {
-                player.sendMessage(ChatColor.GRAY + "An unexpected error occured, please try again later.");
+                player.spigot().sendMessage(MessageBuilder.internalError());
                 return;
             }
 
             List<Waypoint> waypoints = result.getValue();
             
-            StringBuilder message = new StringBuilder(MessageFormatter.success("=== Your waypoints (" + waypoints.size() + ") ===\n"));
+            MessageBuilder message = new MessageBuilder();
+            message
+                .addSuccess("=== Your waypoints (")
+                .addVariable(String.format("%d", waypoints.size()))
+                .addSuccess(") ===\n");
+
             for (Waypoint waypoint : waypoints) {
                 Location wLocation = waypoint.getLocation();
                 
-                message.append(
-                        MessageFormatter.success(" - ") +
-                        MessageFormatter.clickable(waypoint.getName()) + 
-                        MessageFormatter.success(" @ ") +
-                        MessageFormatter.formatLocation(wLocation) +
-                        MessageFormatter.success("\n"));
+                message
+                    .addSuccess(" - ")
+                    .addClickable(
+                        waypoint.getName(),
+                        new ClickEvent(
+                            ClickEvent.Action.RUN_COMMAND,
+                            String.format("/tp %.2f %.2f %.2f", wLocation.getX(), wLocation.getY(), wLocation.getZ()) 
+                        ),
+                        null
+                    )
+                    .addSuccess(" @ ")
+                    .addLocation(MessageBuilder.LocationFormat.DEFAULT, wLocation)
+                    .addSuccess("\n");
             }
 
-            player.sendMessage(message.toString());
+            player.spigot().sendMessage(message.build());
         } catch (Exception e) {
             e.printStackTrace();
         }
