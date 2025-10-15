@@ -5,7 +5,6 @@ import hu.thingz.waypoints.commands.WaypointTabCompleter;
 import hu.thingz.waypoints.database.DatabaseManager;
 import hu.thingz.waypoints.database.WaypointRepository;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class WaypointPlugin extends JavaPlugin {
@@ -30,7 +29,7 @@ public class WaypointPlugin extends JavaPlugin {
             this.databaseManager.close();
         }
 
-        getLogger().info("onDisable is called!");
+        getLogger().info("Waypoint plugin disabled");
     }
 
     private void registerCommands() {

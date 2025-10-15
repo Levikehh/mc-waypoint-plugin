@@ -1,8 +1,8 @@
 package hu.thingz.waypoints.commands;
 
+import hu.nomindz.devkit.utils.Result;
 import hu.thingz.waypoints.database.WaypointRepository;
 import hu.thingz.waypoints.models.Waypoint;
-import hu.thingz.waypoints.utils.Result;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -35,7 +35,7 @@ public class WaypointTabCompleter implements TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(this.SUBCOMMANDS);
+            completions.addAll(SUBCOMMANDS);
         } else if (args.length == 2) {
             String subCommand = args[0].toLowerCase();
 
@@ -43,6 +43,7 @@ public class WaypointTabCompleter implements TabCompleter {
                 case "add":
                     completions.add("<name>");
                     break;
+                case "tp":
                 case "remove":
                     Result<List<Waypoint>> result = this.repository.list(player.getUniqueId());
                     if (!result.isSuccess()) {

@@ -1,11 +1,10 @@
 package hu.thingz.waypoints.database;
 
+import hu.nomindz.devkit.utils.Result;
 import hu.thingz.waypoints.models.Waypoint;
-import hu.thingz.waypoints.utils.Result;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.ChatColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +66,6 @@ public class WaypointRepository {
             double x = resultSet.getDouble("x");
             double y = resultSet.getDouble("y");
             double z = resultSet.getDouble("z");
-            String color = resultSet.getString("color");
 
             Location location = new Location(Bukkit.getWorld(world), x, y, z);
             return Result.success(new Waypoint(playerId, location, name));
@@ -94,7 +92,6 @@ public class WaypointRepository {
                 double x = resultSet.getDouble("x");
                 double y = resultSet.getDouble("y");
                 double z = resultSet.getDouble("z");
-                String color = resultSet.getString("color");
 
                 Location location = new Location(Bukkit.getWorld(world), x, y, z);
                 waypoints.add(new Waypoint(playerId, location, name));

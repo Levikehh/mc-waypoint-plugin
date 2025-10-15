@@ -1,5 +1,5 @@
 name: WaypointPlugin
-version: 1.0.0
+version: 1.0.1
 main: hu.thingz.waypoints.WaypointPlugin
 api-version: 1.21.9
 author: levikethingz
@@ -9,3 +9,16 @@ commands:
   waypoint:
     description: You can manage your waypoints
     usage: "Usage: /waypoint [add|list|remove]"
+
+permissions:
+  waypoint.*:
+    description: Gives access to all waypoint commands
+  waypoint.add:
+    description: Allows to add a waypoint.
+    default: true
+  waypoint.remove:
+    description: Allows to remove a waypoint.
+    default: true
+  waypoint.list:
+    description: Allows to list waypoints.
+    default: true

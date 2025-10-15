@@ -1,9 +1,9 @@
 package hu.thingz.waypoints.commands;
 
-import hu.thingz.waypoints.utils.CoordinateParser;
-import hu.thingz.waypoints.utils.MessageBuilder;
-import hu.thingz.waypoints.utils.MessageFormatter;
-import hu.thingz.waypoints.utils.Result;
+import hu.nomindz.devkit.utils.CoordinateParser;
+import hu.nomindz.devkit.utils.MessageBuilder;
+import hu.nomindz.devkit.utils.MessageFormatter;
+import hu.nomindz.devkit.utils.Result;
 import hu.thingz.waypoints.WaypointPlugin;
 import hu.thingz.waypoints.database.WaypointRepository;
 import hu.thingz.waypoints.models.Waypoint;
@@ -13,7 +13,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
 import org.bukkit.Location;
-import org.bukkit.ChatColor;
 
 import net.md_5.bungee.api.chat.ClickEvent;
 
@@ -55,6 +54,9 @@ public class WaypointCommand implements CommandExecutor {
                 case "list":
                     listWaypoints(player);
                     break;
+                case "tp":
+                    teleportToWaypoint(player, Arrays.copyOfRange(args, 1, args.length));
+                    break;
                 default:
                     return false;
             }
@@ -65,8 +67,12 @@ public class WaypointCommand implements CommandExecutor {
 
     private void addWaypoint(Player player, String[] args) {
         try {
+            if (!player.hasPermission("waypoint.add")) {
+                player.spigot().sendMessage(new MessageBuilder().addError("You don't have permission to use this command!").build());
+                return;
+            }
             if (args.length == 0 || (args.length > 1 && args.length < 4)) {
-                player.sendMessage(MessageFormatter.error("Usage: /waypoint add <name> [x y z]"));
+                player.spigot().sendMessage(new MessageBuilder().addError("Usage: /waypoint add <name> [x y z]").build());
                 return;
             }
 
@@ -158,25 +164,61 @@ public class WaypointCommand implements CommandExecutor {
                 .addSuccess(") ===\n");
 
             for (Waypoint waypoint : waypoints) {
-                Location wLocation = waypoint.getLocation();
-                
                 message
                     .addSuccess(" - ")
                     .addClickable(
                         waypoint.getName(),
                         new ClickEvent(
                             ClickEvent.Action.RUN_COMMAND,
-                            String.format("/tp %.2f %.2f %.2f", wLocation.getX(), wLocation.getY(), wLocation.getZ()) 
+                            String.format("/waypoint tp %s", waypoint.getName()) 
                         ),
                         null
                     )
                     .addSuccess(" @ ")
-                    .addLocation(MessageBuilder.LocationFormat.DEFAULT, wLocation)
+                    .addLocation(MessageBuilder.LocationFormat.DEFAULT, waypoint.getLocation())
                     .addSuccess("\n");
             }
 
             player.spigot().sendMessage(message.build());
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void teleportToWaypoint(Player player, String[] args) {
+        try {
+            if (args.length == 0) {
+                player.sendMessage(MessageFormatter.error("Usage: /waypoint tp <name>"));
+                return;
+            }
+
+            UUID playerId = player.getUniqueId();
+            String name = args[0];
+
+            Result<Boolean> hasWaypoints = this.repository.hasAny(playerId);
+            if (!hasWaypoints.isSuccess()) {
+                player.spigot().sendMessage(MessageBuilder.internalError());
+                return;
+            }
+
+            if (!hasWaypoints.getValue()) {
+                player.spigot().sendMessage(new MessageBuilder().addError("You don't have any waypoints saved yet.").build());
+                return;
+            }
+
+            Result<Waypoint> result = this.repository.get(playerId, name);
+            if (!result.isSuccess()) {
+                player.spigot().sendMessage(MessageBuilder.internalError());
+                return;
+            }
+
+            if (result.getValue() == null) {
+                player.spigot().sendMessage(new MessageBuilder().addError("Could not find waypoint with this name.").build());
+                return;
+            }
+
+            player.teleport(result.getValue().getLocation());
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
     }

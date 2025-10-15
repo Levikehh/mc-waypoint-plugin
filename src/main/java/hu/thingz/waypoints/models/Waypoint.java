@@ -15,6 +15,10 @@ public class Waypoint {
         this.name = name;
     }
 
+    public UUID getPlayerId() {
+        return this.playerId;
+    }
+
     public Location getLocation() {
         return this.loc;
     }
